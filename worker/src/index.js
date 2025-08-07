@@ -208,6 +208,32 @@ async function handleAPI(path, method, request, env) {
     };
   }
 
+  // Admin login validation
+  if (path === '/api/admin/login' && method === 'POST') {
+    const body = await request.json();
+    const { password } = body;
+
+    const adminPassword = env.ADMIN_PASSWORD || 'Arema123';
+
+    if (password === adminPassword) {
+      return {
+        status: 200,
+        body: JSON.stringify({ 
+          success: true, 
+          message: 'Login successful' 
+        })
+      };
+    } else {
+      return {
+        status: 401,
+        body: JSON.stringify({ 
+          success: false, 
+          message: 'Invalid password' 
+        })
+      };
+    }
+  }
+
   // Get analytics/dashboard data
   if (path === '/api/analytics' && method === 'GET') {
     const { results } = await env.DB.prepare(`

@@ -4,13 +4,25 @@ URL Shortener modern menggunakan **Vite + React** untuk frontend dan **Cloudflar
 
 ## 🚀 Fitur
 
+**User Features:**
 - ✅ Shorten URL dengan custom title & description
 - ✅ Copy to clipboard
 - ✅ Search & filter links
 - ✅ Click tracking
 - ✅ Responsive design dengan Tailwind CSS
+
+**Admin Features:**
+- ✅ **Secure Admin Login** (Password: `Arema123`)
+- ✅ **Admin Dashboard** dengan analytics
+- ✅ **CRUD Operations** - Create, Read, Update, Delete links
+- ✅ **Analytics Dashboard** - Total links, clicks, statistics
+- ✅ **Inline Editing** - Edit links langsung di table
+- ✅ **Recent & Top Links** - Monitor performa
+
+**Technical:**
 - ✅ Database SQLite gratis dengan Cloudflare D1
 - ✅ Deploy ke Vercel (frontend) + Cloudflare Workers (backend)
+- ✅ Session management dengan localStorage
 
 ## 🛠️ Tech Stack
 
@@ -63,9 +75,17 @@ npx wrangler d1 migrations apply shortlink-db
 ```bash
 # Frontend (.env)
 VITE_API_BASE_URL=https://your-worker.your-subdomain.workers.dev
+VITE_ADMIN_PASSWORD=YourSecurePassword123
 
 # Worker (wrangler.toml sudah dikonfigurasi)
+ADMIN_PASSWORD=YourSecurePassword123
+ALLOWED_ORIGINS=https://your-app.vercel.app
 ```
+
+**Security Note:** 
+- Password disimpan di environment variables untuk keamanan
+- Gunakan password yang kuat untuk production
+- Jangan commit file `.env` ke repository
 
 ### 4. Development
 
@@ -125,18 +145,45 @@ CREATE TABLE links (
 
 ## 📡 API Endpoints
 
+**Public Endpoints:**
 - `GET /api/links` - Get all links
 - `POST /api/shorten` - Create short link
 - `GET /api/stats/{short}` - Get link stats
 - `GET /{short}` - Redirect to original URL
 
+**Admin Endpoints:**
+- `PUT /api/links/{id}` - Update link by ID
+- `DELETE /api/links/{id}` - Delete link by ID
+- `GET /api/analytics` - Get dashboard analytics
+
+**Admin Login:**
+- Password: Configurable via `VITE_ADMIN_PASSWORD` (default: `Arema123`)
+- Server-side validation dengan fallback client-side
+- Session stored in localStorage
+- Endpoint: `POST /api/admin/login`
+
 ## 🎯 Usage
 
+**User View:**
 1. Masukkan URL yang ingin di-shorten
 2. Tambahkan title & description (opsional)
 3. Klik "Shorten URL"
 4. Copy short link dengan tombol "Copy"
 5. Share short link Anda!
+
+**Admin Dashboard:**
+1. Klik tab "Admin Dashboard"
+2. Login dengan password (default: `admin123`, bisa diubah di `.env`)
+3. Lihat analytics dan statistics
+4. Edit links dengan klik icon ✏️
+5. Hapus links dengan klik icon 🗑️
+6. Logout dengan tombol "Logout"
+
+**Mengubah Password Admin:**
+1. Edit file `.env`: `VITE_ADMIN_PASSWORD=PasswordBaru123`
+2. Update `wrangler.toml`: `ADMIN_PASSWORD = "PasswordBaru123"`
+3. Deploy ulang worker: `cd worker && pnpm run deploy`
+4. Restart frontend development server
 
 ## 💰 Biaya
 
