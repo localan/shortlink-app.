@@ -340,7 +340,7 @@ function App() {
                   </label>
                   <div className="flex">
                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                      {window.location.origin}/
+                      {window.location.hostname === 'localhost' ? 'link.dwx.my.id/' : `${window.location.origin}/`}
                     </span>
                     <input
                       type="text"
@@ -410,11 +410,11 @@ function App() {
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
                     >
-                      {window.location.origin.replace('3000', '8787')}/{link.short}
+                      {window.location.hostname === 'localhost' ? `link.dwx.my.id/${link.short}` : `${window.location.origin}/${link.short}`}
                       <ExternalLink className="w-4 h-4 ml-1" />
                     </a>
                     <button
-                      onClick={() => copyToClipboard(`${window.location.origin.replace('3000', '8787')}/${link.short}`)}
+                      onClick={() => copyToClipboard(window.location.hostname === 'localhost' ? `https://link.dwx.my.id/${link.short}` : `${window.location.origin}/${link.short}`)}
                       className="ml-2 p-1 text-gray-400 hover:text-gray-600 rounded"
                       title="Copy to clipboard"
                     >
@@ -434,7 +434,7 @@ function App() {
                 </div>
                 
                 <button
-                  onClick={() => copyToClipboard(`${window.location.origin.replace('3000', '8787')}/${link.short}`)}
+                  onClick={() => copyToClipboard(window.location.hostname === 'localhost' ? `https://link.dwx.my.id/${link.short}` : `${window.location.origin}/${link.short}`)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
                 >
                   <Copy className="w-4 h-4 mr-2" />
