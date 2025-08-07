@@ -119,6 +119,75 @@ async function handleAPI(path, method, request, env) {
     }
   }
 
+  // Update link
+  if (path.startsWith('/api/links/') && method === 'PUT') {
+    const linkId = path.split('/')[3];
+    const body = await request.json();
+    const { url, title, description } = body;
+
+    if (!url) {
+      return {
+        status: 400,
+        body: JSON.stringify({ error: 'URL is required' })
+      };
+    }
+
+    // Validate URL
+    try {
+      new URL(url);
+    } catch {
+      return {
+        status: 400,
+        body: JSON.stringify({ error: 'Invalid URL format' })
+      };
+    }
+
+    try {
+      const result = await env.DB.prepare(
+        'UPDATE links SET url = ?, title = ?, description = ? WHERE id = ?'
+      ).bind(url, title || null, description || null, linkId).run();
+
+      if (result.changes === 0) {
+        return {
+          status: 404,
+          body: JSON.stringify({ error: 'Link not found' })
+        };
+      }
+
+      return {
+        status: 200,
+        body: JSON.stringify({ message: 'Link updated successfully' })
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Delete link
+  if (path.startsWith('/api/links/') && method === 'DELETE') {
+    const linkId = path.split('/')[3];
+
+    try {
+      const result = await env.DB.prepare(
+        'DELETE FROM links WHERE id = ?'
+      ).bind(linkId).run();
+
+      if (result.changes === 0) {
+        return {
+          status: 404,
+          body: JSON.stringify({ error: 'Link not found' })
+        };
+      }
+
+      return {
+        status: 200,
+        body: JSON.stringify({ message: 'Link deleted successfully' })
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Get link stats
   if (path.startsWith('/api/stats/') && method === 'GET') {
     const shortCode = path.split('/')[3];
@@ -136,6 +205,35 @@ async function handleAPI(path, method, request, env) {
     return {
       status: 200,
       body: JSON.stringify(results[0])
+    };
+  }
+
+  // Get analytics/dashboard data
+  if (path === '/api/analytics' && method === 'GET') {
+    const { results } = await env.DB.prepare(`
+      SELECT 
+        COUNT(*) as total_links,
+        SUM(clicks) as total_clicks,
+        AVG(clicks) as avg_clicks,
+        MAX(clicks) as max_clicks
+      FROM links
+    `).all();
+
+    const { results: recentLinks } = await env.DB.prepare(
+      'SELECT * FROM links ORDER BY created_at DESC LIMIT 5'
+    ).all();
+
+    const { results: topLinks } = await env.DB.prepare(
+      'SELECT * FROM links ORDER BY clicks DESC LIMIT 5'
+    ).all();
+
+    return {
+      status: 200,
+      body: JSON.stringify({
+        stats: results[0],
+        recentLinks,
+        topLinks
+      })
     };
   }
 
