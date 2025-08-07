@@ -74,7 +74,7 @@ async function handleAPI(path, method, request, env) {
   // Create new short link
   if (path === '/api/shorten' && method === 'POST') {
     const body = await request.json();
-    const { url, title, description } = body;
+    const { url, title, description, customShort } = body;
 
     if (!url) {
       return {
@@ -93,8 +93,67 @@ async function handleAPI(path, method, request, env) {
       };
     }
 
-    // Generate short code
-    const shortCode = generateShortCode();
+    let shortCode;
+
+    // Handle custom short URL
+    if (customShort) {
+      // Validate custom short URL format
+      const shortUrlPattern = /^[a-zA-Z0-9_-]+$/;
+      if (!shortUrlPattern.test(customShort)) {
+        return {
+          status: 400,
+          body: JSON.stringify({ error: 'Custom short URL can only contain letters, numbers, hyphens, and underscores' })
+        };
+      }
+
+      if (customShort.length < 2 || customShort.length > 50) {
+        return {
+          status: 400,
+          body: JSON.stringify({ error: 'Custom short URL must be between 2-50 characters' })
+        };
+      }
+
+      // Check if custom short URL already exists
+      const { results: existingLinks } = await env.DB.prepare(
+        'SELECT short FROM links WHERE short = ?'
+      ).bind(customShort).all();
+
+      if (existingLinks.length > 0) {
+        return {
+          status: 409,
+          body: JSON.stringify({ error: 'This custom short URL is already taken' })
+        };
+      }
+
+      shortCode = customShort;
+    } else {
+      // Generate random short code
+      shortCode = generateShortCode();
+      
+      // Check for duplicates with random code (retry if needed)
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
+        const { results: existingLinks } = await env.DB.prepare(
+          'SELECT short FROM links WHERE short = ?'
+        ).bind(shortCode).all();
+
+        if (existingLinks.length === 0) {
+          break; // Short code is unique
+        }
+        
+        shortCode = generateShortCode();
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        return {
+          status: 500,
+          body: JSON.stringify({ error: 'Unable to generate unique short code. Please try again.' })
+        };
+      }
+    }
     
     try {
       await env.DB.prepare(
@@ -107,15 +166,16 @@ async function handleAPI(path, method, request, env) {
           short: shortCode,
           url: url,
           title: title,
-          description: description
+          description: description,
+          isCustom: !!customShort
         })
       };
     } catch (error) {
-      // Handle duplicate short code
-      if (error.message.includes('UNIQUE constraint failed')) {
-        return handleAPI(path, method, request, env); // Retry with new code
-      }
-      throw error;
+      console.error('Database insert error:', error);
+      return {
+        status: 500,
+        body: JSON.stringify({ error: 'Failed to create short link' })
+      };
     }
   }
 

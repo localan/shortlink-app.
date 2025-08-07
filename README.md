@@ -5,6 +5,7 @@ URL Shortener modern menggunakan **Vite + React** untuk frontend dan **Cloudflar
 ## 🚀 Fitur
 
 **User Features:**
+- ✅ **Custom Short URLs** - Tulis short URL sendiri atau auto-generate
 - ✅ Shorten URL dengan custom title & description
 - ✅ Copy to clipboard
 - ✅ Search & filter links
@@ -147,9 +148,22 @@ CREATE TABLE links (
 
 **Public Endpoints:**
 - `GET /api/links` - Get all links
-- `POST /api/shorten` - Create short link
+- `POST /api/shorten` - Create short link (random atau custom)
 - `GET /api/stats/{short}` - Get link stats
 - `GET /{short}` - Redirect to original URL
+
+**API Examples:**
+```bash
+# Random short URL
+curl -X POST /api/shorten \
+  -d '{"url":"https://example.com","title":"Example"}'
+# Response: {"short":"abc123","isCustom":false}
+
+# Custom short URL
+curl -X POST /api/shorten \
+  -d '{"url":"https://example.com","customShort":"my-link"}'
+# Response: {"short":"my-link","isCustom":true}
+```
 
 **Admin Endpoints:**
 - `PUT /api/links/{id}` - Update link by ID
@@ -167,9 +181,12 @@ CREATE TABLE links (
 **User View:**
 1. Masukkan URL yang ingin di-shorten
 2. Tambahkan title & description (opsional)
-3. Klik "Shorten URL"
-4. Copy short link dengan tombol "Copy"
-5. Share short link Anda!
+3. **Pilih mode Short URL:**
+   - **Auto Generate**: Random short URL (e.g., abc123)
+   - **Custom**: Tulis short URL sendiri (e.g., my-custom-link)
+4. Klik "Shorten URL"
+5. Copy short link dengan tombol "Copy"
+6. Share short link Anda!
 
 **Admin Dashboard:**
 1. Klik tab "Admin Dashboard"

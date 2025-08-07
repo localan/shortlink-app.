@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Link, Copy, Search, Plus, ExternalLink, Settings, Users, LogOut } from 'lucide-react'
+import { Link, Copy, Search, Plus, ExternalLink, Settings, Users, LogOut, Shuffle, Edit3 } from 'lucide-react'
 import axios from 'axios'
 import AdminDashboard from './components/AdminDashboard'
 import AdminLogin from './components/AdminLogin'
@@ -14,6 +14,8 @@ function App() {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [customShort, setCustomShort] = useState('')
+  const [useCustomShort, setUseCustomShort] = useState(false)
   const [links, setLinks] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -78,21 +80,54 @@ function App() {
       return
     }
 
+    // Validate custom short URL if enabled
+    if (useCustomShort) {
+      if (!customShort) {
+        toast.error('Please enter a custom short URL')
+        return
+      }
+      
+      // Basic validation for custom short URL
+      const shortUrlPattern = /^[a-zA-Z0-9_-]+$/
+      if (!shortUrlPattern.test(customShort)) {
+        toast.error('Custom short URL can only contain letters, numbers, hyphens, and underscores')
+        return
+      }
+      
+      if (customShort.length < 2 || customShort.length > 50) {
+        toast.error('Custom short URL must be between 2-50 characters')
+        return
+      }
+    }
+
     setLoading(true)
     try {
-      const response = await axios.post(`${API_BASE}/api/shorten`, {
+      const requestData = {
         url,
         title,
         description
-      })
+      }
+      
+      // Add custom short URL if enabled
+      if (useCustomShort && customShort) {
+        requestData.customShort = customShort
+      }
+      
+      const response = await axios.post(`${API_BASE}/api/shorten`, requestData)
       
       toast.success('URL shortened successfully!')
       setUrl('')
       setTitle('')
       setDescription('')
+      setCustomShort('')
+      setUseCustomShort(false)
       fetchLinks()
     } catch (error) {
-      toast.error('Error shortening URL')
+      if (error.response && error.response.status === 409) {
+        toast.error('This custom short URL is already taken. Please choose another one.')
+      } else {
+        toast.error('Error shortening URL')
+      }
       console.error('Error:', error)
     } finally {
       setLoading(false)
@@ -262,6 +297,75 @@ function App() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+
+            {/* Custom Short URL Section */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Short URL Options
+                </label>
+                <div className="flex items-center space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomShort(false)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      !useCustomShort 
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Shuffle className="w-4 h-4 mr-1" />
+                    Auto Generate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomShort(true)}
+                    className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      useCustomShort 
+                        ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Custom
+                  </button>
+                </div>
+              </div>
+
+              {useCustomShort && (
+                <div>
+                  <label htmlFor="customShort" className="block text-sm font-medium text-gray-700 mb-1">
+                    Custom Short URL *
+                  </label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      {window.location.origin}/
+                    </span>
+                    <input
+                      type="text"
+                      id="customShort"
+                      value={customShort}
+                      onChange={(e) => setCustomShort(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                      placeholder="my-custom-link"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      maxLength="50"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Only letters, numbers, hyphens, and underscores allowed (2-50 characters)
+                  </p>
+                </div>
+              )}
+
+              {!useCustomShort && (
+                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+                  <div className="flex items-center">
+                    <Shuffle className="w-4 h-4 mr-2 text-blue-500" />
+                    <span>A random short URL will be generated automatically (e.g., abc123)</span>
+                  </div>
+                </div>
+              )}
             </div>
             
             <button
