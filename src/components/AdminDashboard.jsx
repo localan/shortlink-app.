@@ -51,19 +51,41 @@ const AdminDashboard = () => {
       return
     }
 
+    if (!editingLink.short) {
+      toast.error('Short URL is required')
+      return
+    }
+
+    // Validate short URL format
+    const shortUrlPattern = /^[a-zA-Z0-9_-]+$/
+    if (!shortUrlPattern.test(editingLink.short)) {
+      toast.error('Short URL can only contain letters, numbers, hyphens, and underscores')
+      return
+    }
+
+    if (editingLink.short.length < 2 || editingLink.short.length > 50) {
+      toast.error('Short URL must be between 2-50 characters')
+      return
+    }
+
     setLoading(true)
     try {
       await axios.put(`${API_BASE}/api/links/${editingLink.id}`, {
         url: editingLink.url,
         title: editingLink.title,
-        description: editingLink.description
+        description: editingLink.description,
+        short: editingLink.short
       })
       
       toast.success('Link updated successfully!')
       setEditingLink(null)
       fetchData()
     } catch (error) {
-      toast.error('Error updating link')
+      if (error.response && error.response.status === 409) {
+        toast.error('This short URL is already taken. Please choose another one.')
+      } else {
+        toast.error('Error updating link')
+      }
       console.error('Error:', error)
     } finally {
       setLoading(false)
@@ -292,9 +314,23 @@ const AdminDashboard = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-blue-600 font-mono">
-                        /{link.short}
-                      </div>
+                      {editingLink && editingLink.id === link.id ? (
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-500 mr-1">/</span>
+                          <input
+                            type="text"
+                            value={editingLink.short}
+                            onChange={(e) => setEditingLink({...editingLink, short: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')})}
+                            placeholder="short-url"
+                            className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                            maxLength="50"
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-sm text-blue-600 font-mono">
+                          /{link.short}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

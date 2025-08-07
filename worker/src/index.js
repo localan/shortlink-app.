@@ -183,7 +183,7 @@ async function handleAPI(path, method, request, env) {
   if (path.startsWith('/api/links/') && method === 'PUT') {
     const linkId = path.split('/')[3];
     const body = await request.json();
-    const { url, title, description } = body;
+    const { url, title, description, short } = body;
 
     if (!url) {
       return {
@@ -202,10 +202,48 @@ async function handleAPI(path, method, request, env) {
       };
     }
 
+    // Validate short URL if provided
+    if (short) {
+      const shortUrlPattern = /^[a-zA-Z0-9_-]+$/;
+      if (!shortUrlPattern.test(short)) {
+        return {
+          status: 400,
+          body: JSON.stringify({ error: 'Short URL can only contain letters, numbers, hyphens, and underscores' })
+        };
+      }
+
+      if (short.length < 2 || short.length > 50) {
+        return {
+          status: 400,
+          body: JSON.stringify({ error: 'Short URL must be between 2-50 characters' })
+        };
+      }
+
+      // Check if short URL already exists (excluding current link)
+      const { results: existingLinks } = await env.DB.prepare(
+        'SELECT id FROM links WHERE short = ? AND id != ?'
+      ).bind(short, linkId).all();
+
+      if (existingLinks.length > 0) {
+        return {
+          status: 409,
+          body: JSON.stringify({ error: 'This short URL is already taken' })
+        };
+      }
+    }
+
     try {
-      const result = await env.DB.prepare(
-        'UPDATE links SET url = ?, title = ?, description = ? WHERE id = ?'
-      ).bind(url, title || null, description || null, linkId).run();
+      let query, params;
+      
+      if (short) {
+        query = 'UPDATE links SET url = ?, title = ?, description = ?, short = ? WHERE id = ?';
+        params = [url, title || null, description || null, short, linkId];
+      } else {
+        query = 'UPDATE links SET url = ?, title = ?, description = ? WHERE id = ?';
+        params = [url, title || null, description || null, linkId];
+      }
+
+      const result = await env.DB.prepare(query).bind(...params).run();
 
       if (result.changes === 0) {
         return {
@@ -219,7 +257,11 @@ async function handleAPI(path, method, request, env) {
         body: JSON.stringify({ message: 'Link updated successfully' })
       };
     } catch (error) {
-      throw error;
+      console.error('Update error:', error);
+      return {
+        status: 500,
+        body: JSON.stringify({ error: 'Failed to update link' })
+      };
     }
   }
 

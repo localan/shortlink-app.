@@ -16,6 +16,7 @@ URL Shortener modern menggunakan **Vite + React** untuk frontend dan **Cloudflar
 - ✅ **Secure Admin Login** (Password: `Arema123`)
 - ✅ **Admin Dashboard** dengan analytics
 - ✅ **CRUD Operations** - Create, Read, Update, Delete links
+- ✅ **Edit Short URLs** - Ubah short URL yang sudah ada
 - ✅ **Analytics Dashboard** - Total links, clicks, statistics
 - ✅ **Inline Editing** - Edit links langsung di table
 - ✅ **Recent & Top Links** - Monitor performa
@@ -119,8 +120,12 @@ npm i -g vercel
 vercel
 
 # Set environment variable di Vercel dashboard:
-# VITE_API_BASE_URL = https://your-worker.your-subdomain.workers.dev
+# VITE_API_BASE_URL = https://shortlink-worker.blog-bangundwir.workers.dev
 ```
+
+**Live Demo:**
+- 🌐 **Frontend**: https://link.dwx.my.id
+- 🔗 **API**: https://shortlink-worker.blog-bangundwir.workers.dev
 
 ## 🔧 Konfigurasi
 
@@ -128,7 +133,16 @@ vercel
 
 1. Setelah deploy worker, copy URL worker Anda
 2. Update `VITE_API_BASE_URL` di Vercel environment variables
-3. Update `ALLOWED_ORIGINS` di `wrangler.toml` dengan domain Vercel Anda
+3. Update `ALLOWED_ORIGINS` di `wrangler.toml` dengan domain Anda
+
+**Current CORS Configuration:**
+```toml
+[env.production.vars]
+ALLOWED_ORIGINS = "https://link.dwx.my.id,https://shortlink-app.vercel.app"
+
+[env.development.vars]
+ALLOWED_ORIGINS = "http://localhost:3000,https://link.dwx.my.id"
+```
 
 ### Database Schema
 
@@ -166,9 +180,22 @@ curl -X POST /api/shorten \
 ```
 
 **Admin Endpoints:**
-- `PUT /api/links/{id}` - Update link by ID
+- `PUT /api/links/{id}` - Update link by ID (termasuk short URL)
 - `DELETE /api/links/{id}` - Delete link by ID
 - `GET /api/analytics` - Get dashboard analytics
+
+**Edit Short URL Example:**
+```bash
+# Edit semua field termasuk short URL
+curl -X PUT /api/links/1 \
+  -d '{"url":"https://example.com","title":"New Title","short":"new-short-url"}'
+# Response: {"message":"Link updated successfully"}
+
+# Error jika short URL sudah ada
+curl -X PUT /api/links/1 \
+  -d '{"url":"https://example.com","short":"existing-url"}'
+# Response: {"error":"This short URL is already taken"}
+```
 
 **Admin Login:**
 - Password: Configurable via `VITE_ADMIN_PASSWORD` (default: `Arema123`)
@@ -192,7 +219,10 @@ curl -X POST /api/shorten \
 1. Klik tab "Admin Dashboard"
 2. Login dengan password (default: `admin123`, bisa diubah di `.env`)
 3. Lihat analytics dan statistics
-4. Edit links dengan klik icon ✏️
+4. **Edit links** dengan klik icon ✏️:
+   - Edit URL, title, description
+   - **Edit Short URL** - Ubah short code yang sudah ada
+   - Validasi real-time untuk format dan duplicate
 5. Hapus links dengan klik icon 🗑️
 6. Logout dengan tombol "Logout"
 
