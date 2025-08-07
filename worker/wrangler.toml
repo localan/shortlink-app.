@@ -10,9 +10,9 @@ database_id = "ae77ccfd-070e-4038-a6a2-d2fd23586319"
 
 # CORS settings
 [env.production.vars]
-ALLOWED_ORIGINS = "https://link.dwx.my.id,https://shortlink-app.vercel.app,https://shortlink-app-bangundwir.vercel.app"
+ALLOWED_ORIGINS = "https://shortlink-app.vercel.app,https://shortlink-app-bangundwir.vercel.app"
 ADMIN_PASSWORD = "Arema123"
 
 [env.development.vars]
-ALLOWED_ORIGINS = "http://localhost:3000,https://link.dwx.my.id"
+ALLOWED_ORIGINS = "http://localhost:3000"
 ADMIN_PASSWORD = "Arema123"

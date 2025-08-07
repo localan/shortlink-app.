@@ -118,15 +118,8 @@ npm i -g vercel
 # Deploy
 vercel
 
-# Set environment variables di Vercel dashboard:
-# VITE_API_BASE_URL = https://shortlink-worker.blog-bangundwir.workers.dev
-# VITE_ADMIN_PASSWORD = Arema123
-
-# Setup custom domain (opsional):
-# 1. Buka Vercel Dashboard > Project Settings > Domains
-# 2. Add domain: link.dwx.my.id
-# 3. Configure DNS di domain provider
-# 4. SSL certificate akan auto-generate
+# Set environment variable di Vercel dashboard:
+# VITE_API_BASE_URL = https://your-worker.your-subdomain.workers.dev
 ```
 
 ## 🔧 Konfigurasi
@@ -208,16 +201,6 @@ curl -X POST /api/shorten \
 2. Update `wrangler.toml`: `ADMIN_PASSWORD = "PasswordBaru123"`
 3. Deploy ulang worker: `cd worker && pnpm run deploy`
 4. Restart frontend development server
-
-## 🌐 Live Demo
-
-**Production URL:** [https://link.dwx.my.id](https://link.dwx.my.id)
-
-**Features:**
-- ✅ Custom domain dengan SSL
-- ✅ Global CDN via Vercel
-- ✅ Cloudflare Workers backend
-- ✅ D1 Database persistent storage
 
 ## 💰 Biaya
 
