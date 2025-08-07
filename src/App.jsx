@@ -1,0 +1,254 @@
+import React, { useState, useEffect } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
+import { Link, Copy, Search, Plus, ExternalLink } from 'lucide-react'
+import axios from 'axios'
+
+// API base URL - ganti dengan URL Cloudflare Worker Anda
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787'
+
+function App() {
+  const [url, setUrl] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [links, setLinks] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    fetchLinks()
+  }, [])
+
+  const fetchLinks = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/api/links`)
+      setLinks(response.data)
+    } catch (error) {
+      console.error('Error fetching links:', error)
+      // Fallback data untuk demo
+      setLinks([
+        {
+          id: 1,
+          short: 'edit',
+          url: 'https://www.dwx.my.id/edit',
+          title: '',
+          description: '',
+          created_at: '2024-01-01'
+        },
+        {
+          id: 2,
+          short: 'nixos',
+          url: 'https://www.dwx.my.id/nixos',
+          title: 'Install Nixos',
+          description: 'tentang mengistall nix os',
+          created_at: '2024-01-01'
+        },
+        {
+          id: 3,
+          short: 'nixpkgs',
+          url: 'https://www.dwx.my.id/nixpkgs',
+          title: 'Install nixpkgs',
+          description: '',
+          created_at: '2024-01-01'
+        },
+        {
+          id: 4,
+          short: 'nvim-lazy',
+          url: 'https://www.dwx.my.id/nvim-lazy',
+          title: '',
+          description: '',
+          created_at: '2024-01-01'
+        }
+      ])
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!url) {
+      toast.error('Please enter a URL')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await axios.post(`${API_BASE}/api/shorten`, {
+        url,
+        title,
+        description
+      })
+      
+      toast.success('URL shortened successfully!')
+      setUrl('')
+      setTitle('')
+      setDescription('')
+      fetchLinks()
+    } catch (error) {
+      toast.error('Error shortening URL')
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const copyToClipboard = (shortUrl) => {
+    navigator.clipboard.writeText(shortUrl)
+    toast.success('Copied to clipboard!')
+  }
+
+  const filteredLinks = links.filter(link =>
+    link.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    link.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    link.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    link.short.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <Toaster position="top-right" />
+      
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Link className="w-8 h-8 text-blue-600 mr-2" />
+            <h1 className="text-3xl font-bold text-gray-800">URL Shortener Links</h1>
+          </div>
+          <p className="text-gray-600">Create and manage your shortened URLs</p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+                URL to shorten *
+              </label>
+              <input
+                type="url"
+                id="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Title (optional)
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter title"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (optional)
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter description"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              {loading ? 'Creating...' : 'Shorten URL'}
+            </button>
+          </form>
+        </div>
+
+        {/* Search */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search links..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        {/* Links List */}
+        <div className="space-y-4">
+          {filteredLinks.map((link) => (
+            <div key={link.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div className="flex flex-col md:flex-row md:items-center justify-between">
+                <div className="flex-1 mb-4 md:mb-0">
+                  <div className="flex items-center mb-2">
+                    <a
+                      href={`${API_BASE}/${link.short}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                    >
+                      {window.location.origin.replace('3000', '8787')}/{link.short}
+                      <ExternalLink className="w-4 h-4 ml-1" />
+                    </a>
+                    <button
+                      onClick={() => copyToClipboard(`${window.location.origin.replace('3000', '8787')}/${link.short}`)}
+                      className="ml-2 p-1 text-gray-400 hover:text-gray-600 rounded"
+                      title="Copy to clipboard"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {link.title && (
+                    <h3 className="font-medium text-gray-900 mb-1">Title: {link.title}</h3>
+                  )}
+                  
+                  {link.description && (
+                    <p className="text-gray-600 text-sm mb-2">Description: {link.description}</p>
+                  )}
+                  
+                  <p className="text-gray-500 text-sm break-all">{link.url}</p>
+                </div>
+                
+                <button
+                  onClick={() => copyToClipboard(`${window.location.origin.replace('3000', '8787')}/${link.short}`)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredLinks.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No links found</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default App
